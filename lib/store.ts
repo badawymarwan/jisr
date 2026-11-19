@@ -51,6 +51,18 @@ export function deleteItem(id: string) {
   write(ITEMS_KEY, getItems().filter((i) => i.id !== id));
 }
 
+/** adds a word the student looked up to that lesson, so it stays highlighted there. */
+export function addTermToItem(id: string, t: Term) {
+  const item = getItem(id);
+  if (!item) return;
+  const has = (list: Term[]) => list.some((x) => x.term.toLowerCase() === t.term.toLowerCase());
+  if (item.notes) {
+    if (!has(item.notes.terms)) updateItem(id, { notes: { ...item.notes, terms: [...item.notes.terms, t] } });
+  } else if (item.assignment) {
+    if (!has(item.assignment.terms)) updateItem(id, { assignment: { ...item.assignment, terms: [...item.assignment.terms, t] } });
+  }
+}
+
 export const getCourses = () => Array.from(new Set(getItems().map((i) => i.course))).sort();
 
 // ---------- word bank + arabic fade ----------

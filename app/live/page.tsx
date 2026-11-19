@@ -149,7 +149,7 @@ export default function LivePage() {
   return (
     <div>
       <h1 className="text-3xl font-bold tracking-tight">Live mode</h1>
-      <p className="mt-1 text-slate-600">Notes appear while the professor talks. Tap highlighted words for Arabic help.</p>
+      <p className="mt-1 text-slate-600">Notes appear while the professor talks. Tap any word for Arabic help.</p>
 
       <input className="input mt-5" list="live-courses" placeholder="Course (e.g. ECON 101)" value={course} onChange={(e) => setCourse(e.target.value)} />
       <datalist id="live-courses">

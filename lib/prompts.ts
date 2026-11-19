@@ -65,3 +65,11 @@ ${STYLE}
 
 Reply with ONLY valid JSON, no other text:
 {"points": ["..."], "terms": [{"term": "...", "meaning": "...", "arabic": "..."}]}`;
+
+export const DEFINE_SYSTEM = `You explain one English word to a Bahraini university student who studied in Arabic at school.
+You get the WORD and the SENTENCE it appears in. Explain what the word means in THAT sentence (the same word can mean different things in different places).
+- "meaning": simple English (around CEFR B1), max 12 words. Don't use the word itself in the explanation.
+- "arabic": short Modern Standard Arabic explanation, max 12 words.
+
+Reply with ONLY valid JSON, no other text:
+{"term": "the word", "meaning": "...", "arabic": "..."}`;

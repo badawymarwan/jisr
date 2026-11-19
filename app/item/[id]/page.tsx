@@ -88,9 +88,9 @@ function NotesView({ item }: { item: Item }) {
     <div className="space-y-4">
       <div className="card">
         <p className="text-[17px] leading-relaxed text-slate-700">
-          <TermText text={n.summary} terms={n.terms} course={item.course} />
+          <TermText text={n.summary} terms={n.terms} course={item.course} itemId={item.id} />
         </p>
-        <p className="mt-3 text-xs text-slate-400">Tap a highlighted word for its meaning and Arabic help.</p>
+        <p className="mt-3 text-xs text-slate-400">Tap any word for its meaning and Arabic help.</p>
       </div>
       {n.sections.map((s, i) => (
         <div key={i} className="card">
@@ -100,7 +100,7 @@ function NotesView({ item }: { item: Item }) {
               <li key={j} className="flex gap-3 text-[16px] leading-relaxed">
                 <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                 <span>
-                  <TermText text={p} terms={n.terms} course={item.course} />
+                  <TermText text={p} terms={n.terms} course={item.course} itemId={item.id} />
                 </span>
               </li>
             ))}
@@ -334,7 +334,7 @@ function AskView({ item }: { item: Item }) {
           ) : (
             <div key={k} className="card max-w-[92%] !rounded-bl-md">
               <p className="leading-relaxed">
-                <TermText text={m.content} terms={terms} course={item.course} />
+                <TermText text={m.content} terms={terms} course={item.course} itemId={item.id} />
               </p>
               {m.arabic ? (
                 <p dir="rtl" className="mt-3 rounded-2xl bg-amber-100 p-3 font-arabic leading-relaxed text-amber-800">
@@ -385,7 +385,7 @@ function AssignmentView({ item }: { item: Item }) {
             <li key={i} className={ordered ? "pl-1" : "flex gap-3"}>
               {!ordered && <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />}
               <span>
-                <TermText text={s} terms={a.terms} course={item.course} />
+                <TermText text={s} terms={a.terms} course={item.course} itemId={item.id} />
               </span>
             </li>
           ))}
@@ -407,7 +407,7 @@ function AssignmentView({ item }: { item: Item }) {
           <h2 className="text-lg font-semibold">Key words</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {a.terms.map((t) => (
-              <TermText key={t.term} text={t.term} terms={[t]} course={item.course} />
+              <TermText key={t.term} text={t.term} terms={[t]} course={item.course} itemId={item.id} />
             ))}
           </div>
         </div>
