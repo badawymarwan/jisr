@@ -102,7 +102,7 @@ async function callGeminiModel(model: string, system: string, content: string | 
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY ?? "" },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
+        ...(system?.trim() ? { systemInstruction: { parts: [{ text: system }] } } : {}),
         contents: [{ role: "user", parts }],
         generationConfig: {
           // extra room because some gemini models "think" before answering
