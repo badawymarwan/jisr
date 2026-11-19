@@ -38,6 +38,19 @@ export const sttProvider: "groq" | "openai" | "demo" = GROQ_KEY ? "groq" : OPENA
 export const demoAI = aiProvider === "demo";
 export const demoSpeech = sttProvider === "demo";
 
+const TIMEOUT_MS = 45_000;
+
+/** fetch with a time limit, so a stuck ai service gives a clear error instead of loading forever. */
+async function fetchWithTimeout(service: string, url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+  } catch (e) {
+    if (e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError"))
+      throw new Error(`${service} didn't answer within ${TIMEOUT_MS / 1000} seconds. Try again, or with shorter text.`);
+    throw new Error(`Couldn't reach ${service}. Check your internet connection.`);
+  }
+}
+
 export type Block =
   | { type: "text"; text: string }
   | { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } };
@@ -60,7 +73,7 @@ async function callGemini(system: string, content: string | Block[], maxTokens: 
   const parts = blocks.map((b) =>
     b.type === "text" ? { text: b.text } : { inline_data: { mime_type: b.source.media_type, data: b.source.data } }
   );
-  const res = await fetch(`${GEMINI_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+  const res = await fetchWithTimeout("Gemini", `${GEMINI_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY ?? "" },
     body: JSON.stringify({
@@ -89,7 +102,7 @@ async function callGemini(system: string, content: string | Block[], maxTokens: 
 }
 
 async function callClaude(system: string, content: string | Block[], maxTokens: number): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetchWithTimeout("Claude", "https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -125,7 +138,7 @@ export async function transcribe(file: Blob, filename: string): Promise<string> 
   const groq = sttProvider === "groq";
   form.append("model", groq ? GROQ_STT_MODEL : "whisper-1");
   const url = groq ? `${GROQ_BASE}/v1/audio/transcriptions` : "https://api.openai.com/v1/audio/transcriptions";
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(groq ? "Groq" : "OpenAI", url, {
     method: "POST",
     headers: { Authorization: `Bearer ${groq ? GROQ_KEY : OPENAI_KEY}` },
     body: form,
