@@ -2,7 +2,6 @@
 // used when a student taps a word the ai didn't highlight.
 import { generate, demoAI, errorResponse, parseJSON } from "@/lib/ai";
 import { MOCK_NOTES } from "@/lib/mock";
-import * as norm from "@/lib/normalize";
 import { DEFINE_SYSTEM } from "@/lib/prompts";
 import type { Term } from "@/lib/types";
 
@@ -23,10 +22,17 @@ export async function POST(req: Request) {
     }
 
     const reply = await generate(DEFINE_SYSTEM, `WORD: ${w}\nSENTENCE: ${(sentence ?? "").slice(0, 500)}`, 300, { json: true });
-    const [term] = norm.terms([parseJSON<Term>(reply)]);
-    if (!term) throw new Error("Couldn't explain that word. Try again.");
+    // the ai sometimes names the fields differently or leaves out "term", so accept a few spellings.
+    // (if it replies with a list, take the first item)
+    const parsed = parseJSON<Record<string, unknown> | Record<string, unknown>[]>(reply);
+    const raw = (Array.isArray(parsed) ? parsed[0] : parsed) ?? {};
+    const pick = (...keys: string[]) => keys.map((k) => raw[k]).find((v) => typeof v === "string" && v.trim()) as string | undefined;
+    const meaning = pick("meaning", "definition", "explanation", "simple_meaning");
+    const arabic = pick("arabic", "arabic_explanation", "translation", "ar") ?? "";
+    if (!meaning) throw new Error("Couldn't explain that word. Try again.");
     // keep the word exactly as the student saw it, so it highlights and caches correctly
-    return Response.json({ term: { ...term, term: w } });
+    const term: Term = { term: w, meaning, arabic };
+    return Response.json({ term });
   } catch (e) {
     return errorResponse(e);
   }

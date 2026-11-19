@@ -155,7 +155,15 @@ async function callClaude(system: string, content: string | Block[], maxTokens: 
 
 /** claude/gemini are told to reply with json only; this pulls the json out safely. */
 export function parseJSON<T>(text: string): T {
-  const cleaned = text.replace(/```json|```/g, "");
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  // a reply that is a list: parse it as a list
+  if (cleaned.startsWith("[")) {
+    try {
+      return JSON.parse(cleaned) as T;
+    } catch {
+      // fall through to the { } search below
+    }
+  }
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("The AI reply had no JSON in it. Try again.");
