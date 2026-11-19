@@ -14,7 +14,12 @@ const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+// models tried in order: if one is busy (503), rate limited (429) or too slow, the next one is used.
+// set GEMINI_MODEL to override, e.g. GEMINI_MODEL=gemini-3.5-flash-lite,gemini-flash-lite-latest
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite,gemini-2.5-flash-lite")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 const GROQ_STT_MODEL = process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo";
 
@@ -38,7 +43,7 @@ export const sttProvider: "groq" | "openai" | "demo" = GROQ_KEY ? "groq" : OPENA
 export const demoAI = aiProvider === "demo";
 export const demoSpeech = sttProvider === "demo";
 
-const TIMEOUT_MS = 45_000;
+const TIMEOUT_MS = 15_000; // per model, so fallbacks still fit in the 60s limit
 
 /** fetch with a time limit, so a stuck ai service gives a clear error instead of loading forever. */
 async function fetchWithTimeout(service: string, url: string, init: RequestInit): Promise<Response> {
@@ -68,26 +73,53 @@ export async function generate(
   return aiProvider === "anthropic" ? callClaude(system, content, maxTokens) : callGemini(system, content, maxTokens, !!opts.json);
 }
 
+/** tries each gemini model in turn until one answers. */
 async function callGemini(system: string, content: string | Block[], maxTokens: number, json: boolean): Promise<string> {
+  let lastError: unknown;
+  for (const model of GEMINI_MODELS) {
+    try {
+      return await callGeminiModel(model, system, content, maxTokens, json);
+    } catch (e) {
+      lastError = e;
+      const retryable = e instanceof RetryableError;
+      if (!retryable) throw e; // wrong key, blocked request etc: no point trying another model
+    }
+  }
+  throw lastError instanceof Error ? new Error(lastError.message.replace(/^Gemini/, "Gemini (all models busy)")) : lastError;
+}
+
+/** an error where trying a different model might help (busy, rate limited, timed out). */
+class RetryableError extends Error {}
+
+async function callGeminiModel(model: string, system: string, content: string | Block[], maxTokens: number, json: boolean): Promise<string> {
   const blocks: Block[] = typeof content === "string" ? [{ type: "text", text: content }] : content;
   const parts = blocks.map((b) =>
     b.type === "text" ? { text: b.text } : { inline_data: { mime_type: b.source.media_type, data: b.source.data } }
   );
-  const res = await fetchWithTimeout("Gemini", `${GEMINI_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY ?? "" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts }],
-      generationConfig: {
-        // extra room because some gemini models "think" before answering
-        maxOutputTokens: Math.max(maxTokens * 2, 4000),
-        temperature: 0.4,
-        ...(json ? { responseMimeType: "application/json" } : {}),
-      },
-    }),
-  });
-  if (!res.ok) throw new Error(friendly("Gemini", res.status, await res.text()));
+  let res: Response;
+  try {
+    res = await fetchWithTimeout("Gemini", `${GEMINI_BASE}/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_KEY ?? "" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          // extra room because some gemini models "think" before answering
+          maxOutputTokens: Math.max(maxTokens * 2, 4000),
+          temperature: 0.4,
+          ...(json ? { responseMimeType: "application/json" } : {}),
+        },
+      }),
+    });
+  } catch (e) {
+    throw new RetryableError(e instanceof Error ? e.message : "Gemini didn't answer");
+  }
+  if (!res.ok) {
+    const msg = friendly("Gemini", res.status, await res.text());
+    if ([404, 429, 500, 503, 504].includes(res.status)) throw new RetryableError(msg);
+    throw new Error(msg);
+  }
   const data = (await res.json()) as {
     candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
     promptFeedback?: { blockReason?: string };
@@ -97,7 +129,7 @@ async function callGemini(system: string, content: string | Block[], maxTokens: 
     .filter((p) => !p.thought)
     .map((p) => p.text ?? "")
     .join("");
-  if (!text.trim()) throw new Error("Gemini returned an empty answer. Try again.");
+  if (!text.trim()) throw new RetryableError("Gemini returned an empty answer. Try again.");
   return text;
 }
 
