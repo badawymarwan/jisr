@@ -14,7 +14,7 @@ const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 const GROQ_STT_MODEL = process.env.GROQ_STT_MODEL || "whisper-large-v3-turbo";
 
