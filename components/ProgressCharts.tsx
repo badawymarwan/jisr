@@ -1,15 +1,14 @@
 "use client";
-// progress: proof the student is improving. words learned per week goes up,
-// times they needed arabic goes down (the "arabic fade").
+// the two progress charts (words learned, arabic needed), shared by the home dashboard.
 
-import { useMemo, useState } from "react";
-import { addSampleHistory, getLog, removeSampleHistory, useStore, type LogEvent } from "@/lib/store";
+import { useState } from "react";
+import type { LogEvent } from "@/lib/store";
 
 const WEEK = 7 * 24 * 3600 * 1000;
-const WEEKS = 6;
+export const WEEKS = 6;
 
-/** splits the log into the last 6 weeks and counts each kind per week. */
-function perWeek(log: LogEvent[], kind: LogEvent["kind"]) {
+/** splits the log into the last 6 weeks and counts one kind per week. */
+export function perWeek(log: LogEvent[], kind: LogEvent["kind"]) {
   const now = Date.now();
   return Array.from({ length: WEEKS }, (_, i) => {
     const start = now - (WEEKS - i) * WEEK;
@@ -19,49 +18,8 @@ function perWeek(log: LogEvent[], kind: LogEvent["kind"]) {
   });
 }
 
-export default function ProgressPage() {
-  const log = useStore(getLog, []);
-  const taps = useMemo(() => perWeek(log, "tap"), [log]);
-  const learned = useMemo(() => perWeek(log, "learned"), [log]);
-  const hasSample = log.some((e) => e.sample);
-
-  const totalLearned = log.filter((e) => e.kind === "learned").length;
-  const firstWeek = taps.find((w) => w.value > 0)?.value ?? 0;
-  const lastWeek = taps[WEEKS - 1].value;
-  const drop = firstWeek > 0 ? Math.round(((firstWeek - lastWeek) / firstWeek) * 100) : 0;
-
-  return (
-    <div>
-      <h1 className="text-3xl font-bold tracking-tight">Your progress</h1>
-      <p className="mt-1 text-slate-500">Less Arabic, more English, week by week.</p>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-navy-800">{totalLearned}</p>
-          <p className="text-xs text-slate-500">words learned</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-3xl font-bold text-navy-800">{drop > 0 ? `↓ ${drop}%` : "–"}</p>
-          <p className="text-xs text-slate-500">less Arabic needed</p>
-        </div>
-      </div>
-
-      <Chart title="Words learned per week" data={learned} color="#172e57" unit="words" />
-      <Chart title="Times you needed Arabic" subtitle="Going down = your English is improving" data={taps} color="#b9790f" unit="taps" />
-
-      {log.length === 0 && (
-        <p className="mt-6 text-sm text-slate-500">Nothing yet. Tap words in your lessons and mark the ones you know, and your progress shows up here.</p>
-      )}
-
-      <button className="mt-8 text-sm text-slate-400 underline" onClick={hasSample ? removeSampleHistory : addSampleHistory}>
-        {hasSample ? "Remove sample history" : "Show sample history (for demos)"}
-      </button>
-    </div>
-  );
-}
-
 /** a simple bar chart drawn with svg. hover or tap a bar to see its number. */
-function Chart({ title, subtitle, data, color, unit }: { title: string; subtitle?: string; data: { label: string; value: number }[]; color: string; unit: string }) {
+export function Chart({ title, subtitle, data, color, unit }: { title: string; subtitle?: string; data: { label: string; value: number }[]; color: string; unit: string }) {
   const [hover, setHover] = useState<number | null>(null);
   const W = 320, H = 150, pad = 22; // drawing size; it scales to the card width
   const max = Math.max(1, ...data.map((d) => d.value));
@@ -69,7 +27,7 @@ function Chart({ title, subtitle, data, color, unit }: { title: string; subtitle
   const barW = slot * 0.55;
 
   return (
-    <div className="card mt-5">
+    <div className="card">
       <p className="font-semibold text-navy-900">{title}</p>
       {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
       <svg viewBox={`0 0 ${W} ${H + pad}`} className="mt-3 w-full" role="img" aria-label={`${title}: ${data.map((d) => `${d.label} ${d.value}`).join(", ")}`}>
