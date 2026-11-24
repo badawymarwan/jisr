@@ -103,6 +103,7 @@ export function reviewWord(term: string, knew: boolean) {
   w.streak = knew ? (w.streak ?? 0) + 1 : 0;
   w.due = Date.now() + GAPS[Math.min(w.streak, GAPS.length - 1)] * DAY;
   write(WORDS_KEY, words);
+  logEvent("review", w.term); // lets the home page tick off "review words" for today
   if (!before && isLearned(w)) logEvent("learned", w.term);
 }
 
@@ -185,7 +186,7 @@ export const wordFor = (term: string) => getWords()[keyOf(term)];
 // sample: true marks fake history added by the demo button, so it can be removed.
 
 // tap = opened a word card. arabic = pressed "show arabic". learned = reached 3 correct recalls.
-export type LogEvent = { t: number; kind: "tap" | "arabic" | "learned"; term: string; sample?: boolean };
+export type LogEvent = { t: number; kind: "tap" | "arabic" | "learned" | "review"; term: string; sample?: boolean };
 
 export const getLog = (): LogEvent[] => read<LogEvent[]>(LOG_KEY, []);
 

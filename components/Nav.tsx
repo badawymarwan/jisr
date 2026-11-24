@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "/", label: "Home", icon: "M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" },
+  { href: "/", label: "Today", icon: "M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" },
   { href: "/new", label: "New", icon: "M12 5v14M5 12h14" },
   { href: "/words", label: "Words", icon: "M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 5v16" },
   { href: "/live", label: "Live", icon: "M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3zm6-3a6 6 0 01-12 0m6 6v3" },
