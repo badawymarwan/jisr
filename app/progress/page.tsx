@@ -15,7 +15,7 @@ export default function ProgressPage() {
   const hasSample = log.some((e) => e.sample);
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-[28px]">Progress</h1>
       <p className="mt-1 text-slate-500">Less Arabic, more English, week by week.</p>
 

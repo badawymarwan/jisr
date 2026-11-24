@@ -25,7 +25,7 @@ export default function WordsPage() {
   if (session) return <Review {...session} onDone={() => setSession(null)} />;
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight">Word bank</h1>
 
       <div className="mt-5 grid grid-cols-3 gap-3">

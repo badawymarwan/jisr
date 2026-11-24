@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Nav />
           <main className="px-4 pb-28 pt-6 md:pb-12 md:pl-[17rem] md:pr-10">
-            <div className="mx-auto max-w-3xl">
+            <div className="mx-auto max-w-6xl">
               <DemoBanner />
               {children}
             </div>

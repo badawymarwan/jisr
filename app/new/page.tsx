@@ -146,7 +146,7 @@ export default function NewPage() {
   const mmss = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight">Add a lesson</h1>
 
       <div className="mt-6">

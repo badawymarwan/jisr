@@ -16,7 +16,7 @@ export default function CoursePage() {
   const learned = words.filter(isLearned).length;
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <Link href="/" className="text-sm text-slate-500">
         ← Courses
       </Link>

@@ -30,7 +30,7 @@ export function Chart({ title, subtitle, data, color, unit }: { title: string; s
     <div className="card">
       <p className="font-semibold text-navy-600">{title}</p>
       {subtitle && <p className="text-xs font-semibold text-[#64748b]">{subtitle}</p>}
-      <svg viewBox={`0 0 ${W} ${H + pad}`} className="mt-3 w-full" role="img" aria-label={`${title}: ${data.map((d) => `${d.label} ${d.value}`).join(", ")}`}>
+      <svg viewBox={`0 0 ${W} ${H + pad}`} className="mx-auto mt-3 max-h-56 w-full" role="img" aria-label={`${title}: ${data.map((d) => `${d.label} ${d.value}`).join(", ")}`}>
         <line x1={0} x2={W} y1={H} y2={H} stroke="#e3e9f4" strokeWidth={2} />
         {data.map((d, i) => {
           const h = (d.value / max) * (H - 24);
