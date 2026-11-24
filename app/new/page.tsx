@@ -40,8 +40,10 @@ export default function NewPage() {
 
   // open straight into a mode when coming from a home shortcut, e.g. /new?mode=pdf
   useEffect(() => {
-    const m = new URLSearchParams(window.location.search).get("mode") as Mode | null;
+    const q = new URLSearchParams(window.location.search);
+    const m = q.get("mode") as Mode | null;
     if (m && MODES.some((x) => x.id === m)) setMode(m);
+    if (q.get("course")) setCourse(q.get("course")!); // coming from a course page
   }, []);
   const pieces = useRef<Promise<string>[]>([]);
 

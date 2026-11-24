@@ -1,190 +1,144 @@
 "use client";
-// home = "today's plan": a blue header with the three key numbers, then a checklist of what to do today
-// (like a tutor telling you what's next), shortcuts to add a lesson, the progress charts, and your courses.
+// home = your courses: arabic fade ring in the corner, a card per course with its word progress,
+// an "add course" card, and a row for words due for review.
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Icon, ICONS } from "@/components/Icon";
-import { Chart, perWeek, WEEKS } from "@/components/ProgressCharts";
-import { dueWords, getItems, getLog, loadSampleData, removeSampleData, useStore } from "@/lib/store";
-import type { Item, ItemType } from "@/lib/types";
+import { perWeek, WEEKS } from "@/components/ProgressCharts";
+import { dueWords, getItems, getLog, getWords, isLearned, loadSampleData, removeSampleData, useStore } from "@/lib/store";
+import type { Item } from "@/lib/types";
 
-const TYPE_LABEL: Record<ItemType, string> = { lecture: "Lecture", reading: "Reading", assignment: "Assignment" };
-const DAY = 24 * 3600 * 1000;
-
-const ADD = [
-  { href: "/new?mode=record", label: "Record", icon: ICONS.mic },
-  { href: "/new?mode=photo", label: "Snap", icon: ICONS.camera },
-  { href: "/new?mode=pdf", label: "PDF", icon: ICONS.pdf },
-  { href: "/new?mode=assignment", label: "Task", icon: ICONS.task },
-];
-
-/** one line of today's checklist */
-type Task = { key: string; title: string; sub: string; done: boolean; href: string; action?: string };
-
-const isToday = (t: number) => new Date(t).toDateString() === new Date().toDateString();
+/** a ring that fills to `pct` percent, with the number in the middle */
+function Ring({ pct, size = 60 }: { pct: number; size?: number }) {
+  const r = size / 2 - 5;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${pct}% less Arabic`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#dbeafe" strokeWidth="6" />
+      {pct > 0 && <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="#2563eb"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeDasharray={`${(pct / 100) * c} ${c}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />}
+      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="14" fontWeight="700" fill="#0d1b33">
+        {pct}%
+      </text>
+    </svg>
+  );
+}
 
 export default function Home() {
   const items = useStore(getItems, [] as Item[]);
+  const words = useStore(getWords, {});
   const due = useStore(dueWords, []);
   const log = useStore(getLog, []);
-
-  const arabicWeeks = useMemo(() => perWeek(log, "arabic"), [log]);
-  const learnedWeeks = useMemo(() => perWeek(log, "learned"), [log]);
-  const totalLearned = log.filter((e) => e.kind === "learned").length;
   const hasSample = items.some((i) => i.id.startsWith("sample-")) || log.some((e) => e.sample);
 
   // arabic fade: how much less arabic this week compared with the first active week
+  const arabicWeeks = useMemo(() => perWeek(log, "arabic"), [log]);
   const firstWeek = arabicWeeks.find((w) => w.value > 0)?.value ?? 0;
-  const thisWeek = arabicWeeks[WEEKS - 1].value;
-  const drop = firstWeek > 0 ? Math.max(0, Math.round(((firstWeek - thisWeek) / firstWeek) * 100)) : 0;
+  const drop = firstWeek > 0 ? Math.max(0, Math.round(((firstWeek - arabicWeeks[WEEKS - 1].value) / firstWeek) * 100)) : 0;
 
-  // today's checklist, built from what the student has: lessons added today (done),
-  // words due for review (to do, or done if reviewed today), and recent assignments (to do).
-  const tasks = useMemo(() => {
-    const list: Task[] = [];
-    items
-      .filter((i) => i.type !== "assignment" && isToday(i.createdAt))
-      .forEach((i) => list.push({ key: i.id, title: `Notes: ${i.title}`, sub: `${i.course} · done`, done: true, href: `/item/${i.id}` }));
-    if (due.length > 0) {
-      const names = due.slice(0, 2).map((w) => w.term).join(", ") + (due.length > 2 ? `, +${due.length - 2}` : "");
-      list.push({ key: "review", title: `Review ${due.length} ${due.length === 1 ? "word" : "words"}`, sub: names, done: false, href: "/words?review=1", action: "Start" });
-    } else if (log.some((e) => e.kind === "review" && isToday(e.t))) {
-      list.push({ key: "review", title: "Review words", sub: "All done for today", done: true, href: "/words" });
+  // one card per course: lessons, assignments, saved words and how many are learned. newest course first.
+  const courses = useMemo(() => {
+    const map = new Map<string, { name: string; lessons: number; assignments: number; words: number; learned: number; last: number }>();
+    for (const i of items) {
+      const c = map.get(i.course) ?? { name: i.course, lessons: 0, assignments: 0, words: 0, learned: 0, last: 0 };
+      if (i.type === "assignment") c.assignments++;
+      else c.lessons++;
+      c.last = Math.max(c.last, i.createdAt);
+      map.set(i.course, c);
     }
-    items
-      .filter((i) => i.type === "assignment" && Date.now() - i.createdAt < 14 * DAY)
-      .slice(0, 2)
-      .forEach((i) => list.push({ key: i.id, title: i.title, sub: `${i.course} · assignment`, done: false, href: `/item/${i.id}`, action: "Open" }));
-    if (!list.some((t) => !t.done))
-      list.push({ key: "add", title: "Add today's lecture", sub: "Record it, snap the slides, or upload a PDF", done: false, href: "/new", action: "Add" });
-    return list;
-  }, [items, due, log]);
-  const doneCount = tasks.filter((t) => t.done).length;
-  const nextKey = tasks.find((t) => !t.done)?.key; // the next thing to do gets highlighted
+    for (const w of Object.values(words)) {
+      const c = map.get(w.course);
+      if (!c || !w.inBank) continue;
+      c.words++;
+      if (isLearned(w)) c.learned++;
+    }
+    return [...map.values()].sort((a, b) => b.last - a.last);
+  }, [items, words]);
 
-  const byCourse = items.reduce<Record<string, Item[]>>((acc, i) => {
-    (acc[i.course] ??= []).push(i);
-    return acc;
-  }, {});
+  const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
 
   return (
     <div>
-      {/* blue header: date, greeting, the three numbers */}
-      <header className="-mx-4 -mt-6 rounded-b-[28px] bg-blue-600 px-5 pb-6 pt-7 text-white md:mx-0 md:mt-0 md:rounded-[28px]">
-        <p className="text-sm text-blue-100">{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
-        <h1 className="mt-0.5 text-[28px] !text-white">{greeting()}</h1>
-        <div className="mt-5 grid grid-cols-[1.3fr_1fr_1fr] divide-x divide-white/25">
-          <div className="pr-3">
-            <p className="text-[13px] text-blue-100">Arabic fade</p>
-            <p className="mt-0.5 whitespace-nowrap text-[28px] font-bold leading-tight">{drop > 0 ? `↓ ${drop}%` : "–"}</p>
-          </div>
-          <div className="px-4">
-            <p className="text-[13px] text-blue-100">Learned</p>
-            <p className="mt-0.5 text-[28px] font-bold leading-tight">{totalLearned}</p>
-          </div>
-          <div className="pl-4">
-            <p className="text-[13px] text-blue-100">Lessons</p>
-            <p className="mt-0.5 text-[28px] font-bold leading-tight">{items.length}</p>
-          </div>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-500">{greeting()}</p>
+          <h1 className="text-[28px]">Your courses</h1>
         </div>
-      </header>
-
-      {/* today's checklist */}
-      <section className="mt-6">
-        <h2 className="text-lg">Today</h2>
-        <p className="text-sm text-slate-500">
-          {doneCount} of {tasks.length} done
-        </p>
-        <div className="relative mt-3">
-          {/* the thin line joining the circles */}
-          <div className="absolute bottom-6 left-[13px] top-6 w-0.5 bg-line" aria-hidden="true" />
-          {tasks.map((t) => {
-            const next = t.key === nextKey;
-            return (
-              <Link
-                key={t.key}
-                href={t.href}
-                className={`relative my-1.5 flex items-center gap-3.5 rounded-2xl ${next ? "-mx-2 border border-blue-200 bg-blue-50 px-2 py-3" : "py-2.5"}`}
-              >
-                {t.done ? (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round">
-                      <path d="M5 12l5 5 9-10" />
-                    </svg>
-                  </span>
-                ) : (
-                  <span className={`h-7 w-7 shrink-0 rounded-full border-2 bg-white ${next ? "border-blue-600" : "border-slate-300"}`} />
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate text-[15px] font-semibold ${t.done ? "text-slate-400 line-through" : "text-navy-900"}`}>{t.title}</span>
-                  <span className="block truncate text-[13px] text-slate-500">{t.sub}</span>
-                </span>
-                {next && t.action && <span className="rounded-xl bg-blue-600 px-4 py-2 text-[13px] font-semibold text-white">{t.action}</span>}
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* add a lesson */}
-      <section className="mt-6">
-        <h2 className="text-lg">Add a lesson</h2>
-        <div className="mt-3 grid grid-cols-4 gap-2.5">
-          {ADD.map((a) => (
-            <Link key={a.href} href={a.href} className="tile flex flex-col items-center gap-1.5 py-3 text-xs font-semibold text-navy-900">
-              <Icon d={a.icon} color="#2563eb" size={22} />
-              {a.label}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* progress charts */}
-      <h2 className="mb-3 mt-8 text-lg">Your progress</h2>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Chart title="Words learned per week" data={learnedWeeks} color="#1e3a8a" unit="words" />
-        <Chart title="Times you needed Arabic" subtitle="Going down = your English is improving" data={arabicWeeks} color="#2563eb" unit="times" />
+        <Link href="/progress" className="flex flex-col items-center">
+          <Ring pct={drop} />
+          <span className="mt-0.5 text-[11px] font-semibold text-slate-500">Arabic fade</span>
+        </Link>
       </div>
 
-      {/* courses */}
-      {items.length === 0 ? (
-        <div className="card mt-8 text-center">
-          <p className="text-lg font-semibold text-navy-900">No lessons yet</p>
-          <p className="mt-1 text-slate-500">Record a lecture, snap your slides, or paste an assignment to start.</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link href="/new" className="btn">
-              Add your first lesson
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {courses.map((c, idx) => {
+          const pct = c.words ? Math.round((c.learned / c.words) * 100) : 0;
+          const first = idx === 0; // the most recent course is the solid blue one
+          const parts = [c.lessons && plural(c.lessons, "lesson"), c.assignments && plural(c.assignments, "assignment"), plural(c.words, "word")].filter(Boolean);
+          return (
+            <Link
+              key={c.name}
+              href={`/course/${encodeURIComponent(c.name)}`}
+              className={`flex h-[150px] flex-col rounded-2xl p-4 transition ${first ? "bg-blue-600 text-white hover:bg-blue-700" : "tile"}`}
+            >
+              <span className={`text-xs font-semibold ${first ? "text-blue-100" : "text-slate-500"}`}>Course</span>
+              <span className={`mt-1 text-lg font-bold leading-tight ${first ? "" : "text-navy-900"}`}>{c.name}</span>
+              <span className={`mt-auto text-xs ${first ? "text-blue-100" : "text-slate-500"}`}>{parts.join(" · ")}</span>
+              <span className={`mt-2 h-1.5 overflow-hidden rounded-full ${first ? "bg-white/25" : "bg-blue-100"}`} aria-label={`${pct}% of words learned`}>
+                <span className={`block h-full rounded-full ${first ? "bg-white" : "bg-blue-600"}`} style={{ width: `${Math.max(pct, 3)}%` }} />
+              </span>
             </Link>
-            <button className="btn-ghost" onClick={loadSampleData}>
-              Try sample data
-            </button>
-          </div>
-        </div>
-      ) : (
-        Object.entries(byCourse).map(([course, list]) => (
-          <section key={course} className="mt-8">
-            <h2 className="mb-3 text-lg">{course}</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {list.map((i) => (
-                <Link key={i.id} href={`/item/${i.id}`} className="tile flex items-center gap-4 p-4">
-                  <span className={`h-10 w-1.5 shrink-0 rounded-full ${i.type === "assignment" ? "bg-navy-900" : "bg-blue-600"}`} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-semibold text-navy-900">{i.title}</span>
-                    <span className="text-sm text-slate-500">
-                      {TYPE_LABEL[i.type]} · {new Date(i.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))
+          );
+        })}
+        <Link
+          href="/new"
+          className="flex h-[150px] flex-col items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed border-blue-200 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+        >
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {courses.length ? "Add a lesson" : "Add your first lesson"}
+        </Link>
+      </div>
+
+      {due.length > 0 && (
+        <Link href="/words?review=1" className="tile mt-4 flex items-center gap-3 p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z" />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold text-navy-900">
+              {due.length} {due.length === 1 ? "word" : "words"} to review
+            </span>
+            <span className="block truncate text-[13px] text-slate-500">{due.map((w) => w.term).join(", ")}</span>
+          </span>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </Link>
       )}
 
-      <button className="mt-10 text-sm text-slate-400 underline" onClick={hasSample ? removeSampleData : loadSampleData}>
-        {hasSample ? "Remove sample data" : "Load sample data (for demos)"}
-      </button>
+      {items.length === 0 && (
+        <button className="btn-ghost mt-4 w-full" onClick={loadSampleData}>
+          Try with sample data
+        </button>
+      )}
+      {hasSample && (
+        <button className="mt-10 text-sm text-slate-400 underline" onClick={removeSampleData}>
+          Remove sample data
+        </button>
+      )}
     </div>
   );
 }
