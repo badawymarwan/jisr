@@ -12,12 +12,12 @@ type Mode = "record" | "photo" | "audio" | "pdf" | "text" | "assignment";
 
 // icon colours alternate between the two brand colours: navy and yellow
 const MODES: { id: Mode; label: string; hint: string; icon: string; color: string }[] = [
-  { id: "record", label: "Record lecture", hint: "Use your phone's mic in class", icon: ICONS.mic, color: "#1e3a6b" },
-  { id: "photo", label: "Snap slides", hint: "Photos of slides or the whiteboard", icon: ICONS.camera, color: "#ffb800" },
-  { id: "pdf", label: "Upload PDF", hint: "Save slides as PDF first", icon: ICONS.pdf, color: "#ffb800" },
-  { id: "audio", label: "Upload audio", hint: "A recording up to 4MB", icon: ICONS.headphones, color: "#1e3a6b" },
-  { id: "text", label: "Paste a reading", hint: "Copy text from any reading", icon: ICONS.paste, color: "#1e3a6b" },
-  { id: "assignment", label: "Paste assignment", hint: "We explain it, not do it", icon: ICONS.task, color: "#ffb800" },
+  { id: "record", label: "Record lecture", hint: "Use your phone's mic in class", icon: ICONS.mic, color: "#0d1b33" },
+  { id: "photo", label: "Snap slides", hint: "Photos of slides or the whiteboard", icon: ICONS.camera, color: "#2563eb" },
+  { id: "pdf", label: "Upload PDF", hint: "Save slides as PDF first", icon: ICONS.pdf, color: "#2563eb" },
+  { id: "audio", label: "Upload audio", hint: "A recording up to 4MB", icon: ICONS.headphones, color: "#0d1b33" },
+  { id: "text", label: "Paste a reading", hint: "Copy text from any reading", icon: ICONS.paste, color: "#0d1b33" },
+  { id: "assignment", label: "Paste assignment", hint: "We explain it, not do it", icon: ICONS.task, color: "#2563eb" },
 ];
 
 const SEGMENT_MS = 60_000; // send audio for speech-to-text every 60 seconds
@@ -176,8 +176,8 @@ export default function NewPage() {
             className={`tile p-4 text-left ${mode === m.id ? "!border-navy-600 bg-navy-50" : ""}`}
           >
             <Icon d={m.icon} color={m.color} size={32} />
-            <span className="mt-2 block text-[15px] font-extrabold text-[#3c3c3c]">{m.label}</span>
-            <span className="text-xs font-semibold text-[#afafaf]">{m.hint}</span>
+            <span className="mt-2 block text-[15px] font-semibold text-navy-900">{m.label}</span>
+            <span className="text-xs font-semibold text-[#64748b]">{m.hint}</span>
           </button>
         ))}
       </div>
@@ -207,7 +207,7 @@ export default function NewPage() {
             <div>
               {/* a label styled as a big button opens the camera or the photo library on phones */}
               <label className="flex cursor-pointer flex-col items-center rounded-3xl border-2 border-dashed border-navy-200 bg-navy-50 px-6 py-8 text-center hover:bg-navy-100">
-                <Icon d={ICONS.camera} color="#ffb800" size={40} />
+                <Icon d={ICONS.camera} color="#2563eb" size={40} />
                 <span className="mt-2 font-semibold text-navy-900">{photos.length ? "Add more photos" : "Take or choose photos"}</span>
                 <span className="mt-1 text-sm text-slate-500">Slides on the projector, the whiteboard, or a printed handout</span>
                 <input

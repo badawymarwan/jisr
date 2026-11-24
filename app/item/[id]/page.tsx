@@ -98,7 +98,7 @@ function NotesView({ item }: { item: Item }) {
           <ul className="mt-2 space-y-2">
             {s.points.map((p, j) => (
               <li key={j} className="flex gap-3 text-[16px] leading-relaxed">
-                <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
                 <span>
                   <TermText text={p} terms={n.terms} course={item.course} itemId={item.id} />
                 </span>
@@ -257,7 +257,7 @@ function Cards({ practice }: { practice: Practice }) {
           <>
             <p className="text-lg">{c.back}</p>
             {c.arabic && (
-              <p dir="rtl" className="mt-3 font-arabic text-lg text-amber-800">
+              <p dir="rtl" className="mt-3 font-arabic text-lg text-blue-800">
                 {c.arabic}
               </p>
             )}
@@ -337,7 +337,7 @@ function AskView({ item }: { item: Item }) {
                 <TermText text={m.content} terms={terms} course={item.course} itemId={item.id} />
               </p>
               {m.arabic ? (
-                <p dir="rtl" className="mt-3 rounded-2xl bg-amber-100 p-3 font-arabic leading-relaxed text-amber-800">
+                <p dir="rtl" className="mt-3 rounded-2xl bg-blue-50 p-3 font-arabic leading-relaxed text-blue-800">
                   {m.arabic}
                 </p>
               ) : (
@@ -383,7 +383,7 @@ function AssignmentView({ item }: { item: Item }) {
         <ol className={`mt-2 space-y-2 ${ordered ? "list-decimal pl-5" : ""}`}>
           {items.map((s, i) => (
             <li key={i} className={ordered ? "pl-1" : "flex gap-3"}>
-              {!ordered && <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />}
+              {!ordered && <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />}
               <span>
                 <TermText text={s} terms={a.terms} course={item.course} itemId={item.id} />
               </span>

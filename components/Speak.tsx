@@ -38,7 +38,7 @@ export function Speak({ text, lang = "en", label }: { text: string; lang?: "en" 
       onClick={say}
       aria-label={label ?? `Hear "${text}"`}
       className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition ${
-        speaking ? "bg-amber-400 text-navy-900" : "bg-navy-50 text-navy-700 hover:bg-navy-100"
+        speaking ? "bg-blue-400 text-navy-900" : "bg-navy-50 text-navy-700 hover:bg-navy-100"
       }`}
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

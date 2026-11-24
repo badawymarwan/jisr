@@ -52,8 +52,8 @@ export default function TermText({ text, terms, course, itemId }: Props) {
             onClick={() => openTerm(term, course)}
             className={
               learned
-                ? "rounded-md border-b-2 border-dotted border-amber-400 px-0.5 font-medium text-slate-800"
-                : "rounded-md bg-amber-100 px-1 font-semibold text-amber-800 hover:bg-amber-200"
+                ? "rounded-md border-b-2 border-dotted border-blue-400 px-0.5 font-medium text-slate-800"
+                : "rounded-md bg-blue-50 px-1 font-semibold text-blue-800 hover:bg-blue-100"
             }
             title={learned ? "Learned" : "Tap for meaning"}
           >

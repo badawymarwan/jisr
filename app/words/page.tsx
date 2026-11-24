@@ -141,7 +141,7 @@ function Review({ words, practice, onDone }: { words: WordEntry[]; practice: boo
             <p className="mt-4 text-lg">{w.meaning}</p>
             {w.arabic &&
               (arabic ? (
-                <p dir="rtl" className="mt-2 font-arabic text-amber-800">
+                <p dir="rtl" className="mt-2 font-arabic text-blue-800">
                   {w.arabic}
                 </p>
               ) : (

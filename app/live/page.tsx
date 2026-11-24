@@ -124,7 +124,7 @@ export default function LivePage() {
     <ul className={present ? "space-y-6" : "space-y-3"}>
       {points.map((p, i) => (
         <li key={i} className={`flex gap-3 ${present ? "text-3xl leading-snug md:text-4xl" : "text-[17px] leading-relaxed"} animate-[fadein_.5s_ease]`}>
-          <span className={`${present ? "mt-4 h-3 w-3" : "mt-2.5 h-1.5 w-1.5"} shrink-0 rounded-full bg-amber-400`} />
+          <span className={`${present ? "mt-4 h-3 w-3" : "mt-2.5 h-1.5 w-1.5"} shrink-0 rounded-full bg-blue-400`} />
           <span>
             <TermText text={p} terms={terms} course={course.trim() || "My course"} />
           </span>

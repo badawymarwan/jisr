@@ -102,7 +102,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 {/* english first. arabic only if the student asks, and asking is what the fade chart counts. */}
                 {open.t.arabic &&
                   (showArabic ? (
-                    <div dir="rtl" className="mt-4 flex items-start gap-2 rounded-2xl bg-amber-100 p-4 text-amber-800">
+                    <div dir="rtl" className="mt-4 flex items-start gap-2 rounded-2xl bg-blue-50 p-4 text-blue-800">
                       <p className="flex-1 font-arabic text-lg leading-relaxed">{open.t.arabic}</p>
                       <Speak text={open.t.arabic.split("—")[0].trim()} lang="ar" label="Hear the Arabic term" />
                     </div>

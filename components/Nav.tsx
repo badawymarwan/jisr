@@ -27,15 +27,15 @@ export default function Nav() {
     <>
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r-2 border-line bg-white p-5 md:flex">
         <Link href="/" className="mb-8 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-600 text-lg font-black text-white">J</span>
-          <span className="text-2xl font-black text-navy-600">Jisr</span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-600 text-lg font-bold text-white">J</span>
+          <span className="text-2xl font-bold text-navy-600">Jisr</span>
         </Link>
         {LINKS.map((l) => (
           <Link
             key={l.href}
             href={l.href}
-            className={`mb-2 flex items-center gap-3 rounded-2xl border-2 px-4 py-2.5 text-[15px] font-extrabold uppercase tracking-wide ${
-              active(l.href) ? "border-navy-100 bg-navy-50 text-navy-600" : "border-transparent text-[#afafaf] hover:bg-slate-50"
+            className={`mb-2 flex items-center gap-3 rounded-2xl border-2 px-4 py-2.5 text-[15px] font-semibold ${
+              active(l.href) ? "border-navy-100 bg-navy-50 text-navy-600" : "border-transparent text-[#64748b] hover:bg-slate-50"
             }`}
           >
             <Icon d={l.icon} />
@@ -49,7 +49,7 @@ export default function Nav() {
           <Link
             key={l.href}
             href={l.href}
-            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-extrabold uppercase tracking-wide ${active(l.href) ? "text-navy-600" : "text-[#afafaf]"}`}
+            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${active(l.href) ? "text-navy-600" : "text-[#64748b]"}`}
           >
             <Icon d={l.icon} />
             {l.label}
