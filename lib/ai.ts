@@ -43,15 +43,17 @@ export const sttProvider: "groq" | "openai" | "demo" = GROQ_KEY ? "groq" : OPENA
 export const demoAI = aiProvider === "demo";
 export const demoSpeech = sttProvider === "demo";
 
-const TIMEOUT_MS = 15_000; // per model, so fallbacks still fit in the 60s limit
+const TIMEOUT_MS = 15_000; // small jobs (one word, one question): give up on a model fast and try the next
+const BIG_TIMEOUT_MS = 40_000; // big jobs (notes from a whole pdf) genuinely need longer
+const TOTAL_BUDGET_MS = 55_000; // vercel stops the request at 60s, so all tries together must fit in this
 
 /** fetch with a time limit, so a stuck ai service gives a clear error instead of loading forever. */
-async function fetchWithTimeout(service: string, url: string, init: RequestInit): Promise<Response> {
+async function fetchWithTimeout(service: string, url: string, init: RequestInit, timeoutMs = TIMEOUT_MS): Promise<Response> {
   try {
-    return await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
   } catch (e) {
     if (e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError"))
-      throw new Error(`${service} didn't answer within ${TIMEOUT_MS / 1000} seconds. Try again, or with shorter text.`);
+      throw new Error(`${service} didn't answer within ${Math.round(timeoutMs / 1000)} seconds. Try again, or with shorter text.`);
     throw new Error(`Couldn't reach ${service}. Check your internet connection.`);
   }
 }
@@ -76,9 +78,13 @@ export async function generate(
 /** tries each gemini model in turn until one answers. */
 async function callGemini(system: string, content: string | Block[], maxTokens: number, json: boolean): Promise<string> {
   let lastError: unknown;
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const big = maxTokens >= 3000 || typeof content !== "string"; // notes, practice, assignments, any pdf
   for (const model of GEMINI_MODELS) {
+    const left = deadline - Date.now();
+    if (left < 3000) break; // not enough time for another try
     try {
-      return await callGeminiModel(model, system, content, maxTokens, json);
+      return await callGeminiModel(model, system, content, maxTokens, json, Math.min(big ? BIG_TIMEOUT_MS : TIMEOUT_MS, left));
     } catch (e) {
       lastError = e;
       const retryable = e instanceof RetryableError;
@@ -91,7 +97,14 @@ async function callGemini(system: string, content: string | Block[], maxTokens: 
 /** an error where trying a different model might help (busy, rate limited, timed out). */
 class RetryableError extends Error {}
 
-async function callGeminiModel(model: string, system: string, content: string | Block[], maxTokens: number, json: boolean): Promise<string> {
+async function callGeminiModel(
+  model: string,
+  system: string,
+  content: string | Block[],
+  maxTokens: number,
+  json: boolean,
+  timeoutMs: number
+): Promise<string> {
   const blocks: Block[] = typeof content === "string" ? [{ type: "text", text: content }] : content;
   const parts = blocks.map((b) =>
     b.type === "text" ? { text: b.text } : { inline_data: { mime_type: b.source.media_type, data: b.source.data } }
@@ -111,7 +124,7 @@ async function callGeminiModel(model: string, system: string, content: string | 
           ...(json ? { responseMimeType: "application/json" } : {}),
         },
       }),
-    });
+    }, timeoutMs);
   } catch (e) {
     throw new RetryableError(e instanceof Error ? e.message : "Gemini didn't answer");
   }
