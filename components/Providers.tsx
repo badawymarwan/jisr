@@ -4,7 +4,7 @@
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { post } from "@/lib/client";
-import { addTermToItem, getWords, isLearned, setKnown, tapWord, useStore } from "@/lib/store";
+import { addTermToItem, getWords, isLearned, markArabicUsed, setKnown, tapWord, useStore } from "@/lib/store";
 import type { Term } from "@/lib/types";
 
 type Ctx = {
@@ -95,14 +95,21 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               <>
                 <p className="mt-2 text-lg text-slate-700">{open.t.meaning}</p>
 
+                {/* english first. arabic only if the student asks, and asking is what the fade chart counts. */}
                 {open.t.arabic &&
-                  (!open.learned || showArabic ? (
+                  (showArabic ? (
                     <p dir="rtl" className="mt-4 rounded-2xl bg-amber-100 p-4 font-arabic text-lg leading-relaxed text-amber-800">
                       {open.t.arabic}
                     </p>
                   ) : (
-                    <button className="mt-4 text-sm font-medium text-navy-600 underline" onClick={() => setShowArabic(true)}>
-                      Show Arabic anyway
+                    <button
+                      className="mt-4 text-sm font-medium text-navy-600 underline"
+                      onClick={() => {
+                        if (open.t) markArabicUsed(open.t.term);
+                        setShowArabic(true);
+                      }}
+                    >
+                      Still unsure? Show Arabic
                     </button>
                   ))}
               </>

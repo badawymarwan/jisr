@@ -72,12 +72,49 @@ export const getWords = (): Record<string, WordEntry> => read(WORDS_KEY, {});
 const keyOf = (t: string) => t.trim().toLowerCase();
 
 /**
- * arabic fade rule: a word counts as learned when the student marked it
- * "i know this", or it showed up in 2+ new lessons without them tapping it.
+ * a word counts as learned when the student recalled it correctly in review
+ * 3 times in a row (spread over days), or marked it "i know this".
  */
+export const LEARNED_STREAK = 3;
 export function isLearned(w?: WordEntry) {
   if (!w) return false;
-  return w.known || (w.taps > 0 && w.seenSinceTap >= 2);
+  return w.known || (w.streak ?? 0) >= LEARNED_STREAK;
+}
+
+const DAY = 24 * 3600 * 1000;
+const GAPS = [1, 3, 7]; // days until the next review after 0, 1, 2 correct recalls
+
+/** words waiting for review right now: saved, not learned, and their review date has come. */
+export function dueWords(): WordEntry[] {
+  const now = Date.now();
+  return Object.values(getWords()).filter((w) => w.inBank && !isLearned(w) && (w.due ?? 0) <= now);
+}
+
+/**
+ * spaced repetition. knew it: the gap grows (1, 3, 7 days). didn't: back to the start, see it tomorrow.
+ * after 3 correct recalls in a row the word is learned.
+ */
+export function reviewWord(term: string, knew: boolean) {
+  const words = getWords();
+  const w = words[keyOf(term)];
+  if (!w) return;
+  const before = isLearned(w);
+  w.streak = knew ? (w.streak ?? 0) + 1 : 0;
+  w.due = Date.now() + GAPS[Math.min(w.streak, GAPS.length - 1)] * DAY;
+  write(WORDS_KEY, words);
+  if (!before && isLearned(w)) logEvent("learned", w.term);
+}
+
+/** the student pressed "show arabic": english alone wasn't enough, so the word starts over. */
+export function markArabicUsed(term: string) {
+  const words = getWords();
+  const w = words[keyOf(term)];
+  if (w) {
+    w.arabicUses = (w.arabicUses ?? 0) + 1;
+    w.streak = 0;
+    write(WORDS_KEY, words);
+  }
+  logEvent("arabic", term);
 }
 
 /** call once when a new lesson is created: counts that these words appeared again. */
@@ -86,11 +123,8 @@ export function markSeen(terms: Term[], course: string) {
   for (const t of terms) {
     const k = keyOf(t.term);
     const w = words[k];
-    if (w) {
-      const before = isLearned(w);
-      w.seenSinceTap += 1;
-      if (!before && isLearned(w)) logEvent("learned", w.term);
-    } else
+    if (w) w.seenSinceTap += 1;
+    else
       words[k] = {
         ...t,
         course,
@@ -116,7 +150,10 @@ export function tapWord(t: Term, course: string): boolean {
     taps: (w?.taps ?? 0) + 1,
     seenSinceTap: 0,
   };
-  if (!wasInBank) words[k].addedAt = Date.now();
+  if (!wasInBank) {
+    words[k].addedAt = Date.now();
+    words[k].due = Date.now() + DAY; // first review tomorrow
+  }
   write(WORDS_KEY, words);
   logEvent("tap", t.term);
   return !wasInBank;
@@ -146,7 +183,8 @@ export const wordFor = (term: string) => getWords()[keyOf(term)];
 // one line per moment: "tapped a word for arabic help" or "learned a word".
 // sample: true marks fake history added by the demo button, so it can be removed.
 
-export type LogEvent = { t: number; kind: "tap" | "learned"; term: string; sample?: boolean };
+// tap = opened a word card. arabic = pressed "show arabic". learned = reached 3 correct recalls.
+export type LogEvent = { t: number; kind: "tap" | "arabic" | "learned"; term: string; sample?: boolean };
 
 export const getLog = (): LogEvent[] => read<LogEvent[]>(LOG_KEY, []);
 
@@ -159,12 +197,12 @@ const WEEK = 7 * 24 * 3600 * 1000;
 /** fills the last 6 weeks with believable history: arabic taps going down, learned words going up. */
 export function addSampleHistory() {
   const now = Date.now();
-  const taps = [26, 21, 17, 12, 9, 5]; // oldest week first
+  const arabic = [26, 21, 17, 12, 9, 5]; // oldest week first
   const learned = [2, 4, 6, 7, 9, 10];
   const fake: LogEvent[] = [];
-  taps.forEach((n, i) => {
+  arabic.forEach((n, i) => {
     const weekStart = now - (6 - i) * WEEK;
-    for (let j = 0; j < n; j++) fake.push({ t: weekStart + ((j + 0.5) / n) * WEEK, kind: "tap", term: "sample", sample: true });
+    for (let j = 0; j < n; j++) fake.push({ t: weekStart + ((j + 0.5) / n) * WEEK, kind: "arabic", term: "sample", sample: true });
     for (let j = 0; j < learned[i]; j++)
       fake.push({ t: weekStart + ((j + 0.5) / learned[i]) * WEEK, kind: "learned", term: "sample", sample: true });
   });

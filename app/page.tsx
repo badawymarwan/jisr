@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { Chart, perWeek, WEEKS } from "@/components/ProgressCharts";
-import { addSampleHistory, getItems, getLog, getWords, isLearned, removeSampleHistory, useStore } from "@/lib/store";
+import { addSampleHistory, dueWords, getItems, getLog, removeSampleHistory, useStore } from "@/lib/store";
 import type { Item, ItemType } from "@/lib/types";
 
 const TYPE_LABEL: Record<ItemType, string> = { lecture: "Lecture", reading: "Reading", assignment: "Assignment" };
@@ -24,12 +24,11 @@ function greeting() {
 
 export default function Home() {
   const items = useStore(getItems, [] as Item[]);
-  const words = useStore(getWords, {});
+  const due = useStore(dueWords, []);
   const log = useStore(getLog, []);
 
-  const bank = Object.values(words).filter((w) => w.inBank);
-  const toReview = bank.filter((w) => !isLearned(w)).length;
-  const taps = useMemo(() => perWeek(log, "tap"), [log]);
+  const toReview = due.length;
+  const taps = useMemo(() => perWeek(log, "arabic"), [log]);
   const learnedWeeks = useMemo(() => perWeek(log, "learned"), [log]);
   const totalLearned = log.filter((e) => e.kind === "learned").length;
   const hasSample = log.some((e) => e.sample);
@@ -77,9 +76,9 @@ export default function Home() {
       </div>
 
       {toReview > 0 && (
-        <Link href="/words" className="mt-4 flex items-center justify-between rounded-2xl bg-amber-100 px-5 py-4 text-amber-800">
+        <Link href="/words?review=1" className="mt-4 flex items-center justify-between rounded-2xl bg-amber-100 px-5 py-4 text-amber-800">
           <span>
-            <span className="font-semibold">{toReview} words</span> ready to review
+            <span className="font-semibold">{toReview} {toReview === 1 ? "word" : "words"}</span> ready to review
           </span>
           <span className="font-semibold">Review →</span>
         </Link>

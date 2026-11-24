@@ -57,4 +57,7 @@ export type WordEntry = {
   taps: number; // how many times they tapped it
   seenSinceTap: number; // new lessons it appeared in since the last tap
   known: boolean; // student marked "i know this"
+  streak?: number; // correct recalls in a row in review (3 = learned)
+  due?: number; // when it should come back in review (spaced repetition)
+  arabicUses?: number; // times they pressed "show arabic" for it
 };
