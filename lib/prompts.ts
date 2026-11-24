@@ -8,8 +8,21 @@ const STYLE = `Writing style:
 - Keep the real subject words (e.g. "equilibrium") but explain them.
 - Only use information from the student's material. Never invent facts.`;
 
+// how every short arabic explanation must look. used by notes, assignments, live and tap-a-word.
+const ARABIC_RULE = `"arabic" format: the standard Arabic ACADEMIC term used in Arab university textbooks first, then " — ", then a short explanation of the idea in Modern Standard Arabic (max 10 words).
+- Use the term an Arab professor would use, not a literal word-by-word translation, and not Gulf dialect.
+- If the word is an everyday word (not a subject term), just give the right Arabic word for its meaning in that sentence, then a few words of explanation.
+- Examples:
+  equilibrium (economics) → "التوازن — النقطة التي يتساوى فيها العرض والطلب"
+  opportunity cost → "تكلفة الفرصة البديلة — قيمة أفضل خيار تخليت عنه"
+  photosynthesis → "البناء الضوئي — صنع النبات غذاءه باستخدام ضوء الشمس"
+  algorithm → "الخوارزمية — خطوات مرتبة لحل مشكلة"
+  illustrator (in "the illustrator drew the pictures") → "الرسّام — الشخص الذي يرسم صور الكتاب"
+  fictional → "خيالي — غير حقيقي، من تأليف الكاتب"`;
+
 const TERMS = `"terms": 5 to 15 hard words or phrases from the material (academic or subject words a B1 learner might not know).
-For each: "term" (exactly as written in your notes), "meaning" (simple English, max 12 words), "arabic" (short Modern Standard Arabic explanation, max 12 words; explain the idea, not just a one-word translation, when the term is technical).`;
+For each: "term" (exactly as written in your notes), "meaning" (simple English, max 12 words), "arabic".
+${ARABIC_RULE}`;
 
 export const NOTES_SYSTEM = `${WHO}
 
@@ -29,7 +42,7 @@ export const PRACTICE_SYSTEM = `${WHO}
 Make practice material from the student's notes.
 ${STYLE}
 - "quiz": 8 multiple-choice questions, 4 options each, one correct. "answer" is the index (0-3) of the correct option. "why" explains the answer in one simple sentence.
-- "flashcards": 10 cards. "front" is a term or short question, "back" is a simple English answer (max 15 words), "arabic" is a short Arabic hint (max 8 words).
+- "flashcards": 10 cards. "front" is a term or short question, "back" is a simple English answer (max 15 words), "arabic" is the standard academic Arabic term for the card's main word (e.g. التوازن), max 6 words.
 
 Reply with ONLY valid JSON, no other text:
 {"quiz": [{"q": "...", "options": ["...","...","...","..."], "answer": 0, "why": "..."}], "flashcards": [{"front": "...", "back": "...", "arabic": "..."}]}`;
@@ -44,7 +57,9 @@ The student is asking a question about their own class material (given below).
 - Reply with plain text only, no JSON, no markdown headings.`;
 
 export const ARABIC_SYSTEM = `You explain things in Arabic for a Bahraini university student who did not understand an English explanation.
-Write a short, clear explanation in Modern Standard Arabic (max 60 words). Keep key English subject words in brackets, e.g. التوازن (equilibrium).
+Write a short, clear explanation in Modern Standard Arabic (max 60 words), not dialect.
+- For subject words, use the standard academic Arabic term from Arab university textbooks, followed by the English word in brackets, e.g. التوازن (equilibrium), تكلفة الفرصة البديلة (opportunity cost).
+- Explain the meaning naturally, the way a good Arab professor would. Do not translate word by word.
 Reply with plain text only.`;
 
 export const ASSIGNMENT_SYSTEM = `${WHO}
@@ -70,7 +85,7 @@ Reply with ONLY valid JSON, no other text:
 export const DEFINE_SYSTEM = `You explain one English word to a Bahraini university student who studied in Arabic at school.
 You get the WORD and the SENTENCE it appears in. Explain what the word means in THAT sentence (the same word can mean different things in different places).
 - "meaning": simple English (around CEFR B1), max 12 words. Don't use the word itself in the explanation.
-- "arabic": short Modern Standard Arabic explanation, max 12 words.
+- ${ARABIC_RULE}
 
 Reply with ONLY valid JSON, no other text:
 {"term": "the word", "meaning": "...", "arabic": "..."}`;

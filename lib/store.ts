@@ -8,6 +8,7 @@ import type { Item, Term, WordEntry } from "./types";
 
 const ITEMS_KEY = "lb.items.v1";
 const WORDS_KEY = "lb.words.v1";
+const LOG_KEY = "lb.log.v1";
 const EVENT = "lb-store";
 
 function read<T>(key: string, fallback: T): T {
@@ -85,8 +86,11 @@ export function markSeen(terms: Term[], course: string) {
   for (const t of terms) {
     const k = keyOf(t.term);
     const w = words[k];
-    if (w) w.seenSinceTap += 1;
-    else
+    if (w) {
+      const before = isLearned(w);
+      w.seenSinceTap += 1;
+      if (!before && isLearned(w)) logEvent("learned", w.term);
+    } else
       words[k] = {
         ...t,
         course,
@@ -114,6 +118,7 @@ export function tapWord(t: Term, course: string): boolean {
   };
   if (!wasInBank) words[k].addedAt = Date.now();
   write(WORDS_KEY, words);
+  logEvent("tap", t.term);
   return !wasInBank;
 }
 
@@ -121,8 +126,10 @@ export function setKnown(term: string, known: boolean) {
   const words = getWords();
   const w = words[keyOf(term)];
   if (!w) return;
+  const before = isLearned(w);
   w.known = known;
   write(WORDS_KEY, words);
+  if (!before && isLearned(w)) logEvent("learned", w.term);
 }
 
 export function removeFromBank(term: string) {
@@ -134,6 +141,39 @@ export function removeFromBank(term: string) {
 }
 
 export const wordFor = (term: string) => getWords()[keyOf(term)];
+
+// ---------- progress log (for the progress dashboard) ----------
+// one line per moment: "tapped a word for arabic help" or "learned a word".
+// sample: true marks fake history added by the demo button, so it can be removed.
+
+export type LogEvent = { t: number; kind: "tap" | "learned"; term: string; sample?: boolean };
+
+export const getLog = (): LogEvent[] => read<LogEvent[]>(LOG_KEY, []);
+
+function logEvent(kind: LogEvent["kind"], term: string) {
+  write(LOG_KEY, [...getLog(), { t: Date.now(), kind, term }].slice(-5000)); // cap so storage never fills up
+}
+
+const WEEK = 7 * 24 * 3600 * 1000;
+
+/** fills the last 6 weeks with believable history: arabic taps going down, learned words going up. */
+export function addSampleHistory() {
+  const now = Date.now();
+  const taps = [26, 21, 17, 12, 9, 5]; // oldest week first
+  const learned = [2, 4, 6, 7, 9, 10];
+  const fake: LogEvent[] = [];
+  taps.forEach((n, i) => {
+    const weekStart = now - (6 - i) * WEEK;
+    for (let j = 0; j < n; j++) fake.push({ t: weekStart + ((j + 0.5) / n) * WEEK, kind: "tap", term: "sample", sample: true });
+    for (let j = 0; j < learned[i]; j++)
+      fake.push({ t: weekStart + ((j + 0.5) / learned[i]) * WEEK, kind: "learned", term: "sample", sample: true });
+  });
+  write(LOG_KEY, [...getLog().filter((e) => !e.sample), ...fake].sort((a, b) => a.t - b.t));
+}
+
+export function removeSampleHistory() {
+  write(LOG_KEY, getLog().filter((e) => !e.sample));
+}
 
 // ---------- react hook: re-render when storage changes ----------
 
