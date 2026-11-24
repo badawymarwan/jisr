@@ -3,6 +3,7 @@
 // word is tapped (a highlighted word, or any other word the student looks up).
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { Speak } from "./Speak";
 import { post } from "@/lib/client";
 import { addTermToItem, getWords, isLearned, markArabicUsed, setKnown, tapWord, useStore } from "@/lib/store";
 import type { Term } from "@/lib/types";
@@ -84,7 +85,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-900/30 sm:items-center" onClick={() => setOpen(null)}>
           <div className="w-full max-w-md rounded-t-3xl bg-white p-6 shadow-xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4">
-              <h3 className="text-2xl font-bold text-navy-900">{open.t?.term ?? open.word}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-bold text-navy-900">{open.t?.term ?? open.word}</h3>
+                <Speak text={open.t?.term ?? open.word} />
+              </div>
               {open.learned && <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">Learned ✓</span>}
             </div>
 
@@ -98,9 +102,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 {/* english first. arabic only if the student asks, and asking is what the fade chart counts. */}
                 {open.t.arabic &&
                   (showArabic ? (
-                    <p dir="rtl" className="mt-4 rounded-2xl bg-amber-100 p-4 font-arabic text-lg leading-relaxed text-amber-800">
-                      {open.t.arabic}
-                    </p>
+                    <div dir="rtl" className="mt-4 flex items-start gap-2 rounded-2xl bg-amber-100 p-4 text-amber-800">
+                      <p className="flex-1 font-arabic text-lg leading-relaxed">{open.t.arabic}</p>
+                      <Speak text={open.t.arabic.split("—")[0].trim()} lang="ar" label="Hear the Arabic term" />
+                    </div>
                   ) : (
                     <button
                       className="mt-4 text-sm font-medium text-navy-600 underline"

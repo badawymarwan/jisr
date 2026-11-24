@@ -84,3 +84,17 @@ export function fileToBase64(file: File): Promise<string> {
     r.readAsDataURL(file);
   });
 }
+
+/**
+ * shrinks a phone photo (often 4-12MB) to a jpeg of at most 1600px on its longest side (~200-400KB),
+ * so several photos fit in one request under vercel's 4.5MB limit. returns base64 without the "data:" prefix.
+ */
+export async function photoToBase64(file: File, maxSide = 1600): Promise<string> {
+  const bitmap = await createImageBitmap(file); // decodes the photo; also applies the phone's rotation
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.8).split(",")[1] ?? "";
+}

@@ -3,15 +3,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fileToBase64, post, SegmentRecorder, transcribeBlob } from "@/lib/client";
+import { fileToBase64, photoToBase64, post, SegmentRecorder, transcribeBlob } from "@/lib/client";
 import { getCourses, markSeen, newId, saveItem } from "@/lib/store";
 import type { AssignmentHelp, Item, Notes } from "@/lib/types";
 
-type Mode = "record" | "audio" | "pdf" | "text" | "assignment";
+type Mode = "record" | "photo" | "audio" | "pdf" | "text" | "assignment";
 
 const MODES: { id: Mode; label: string; hint: string; icon: string }[] = [
   { id: "record", label: "Record lecture", hint: "Use your phone's mic in class", icon: "🎙️" },
   { id: "audio", label: "Upload audio", hint: "A recording up to 4MB", icon: "🎧" },
+  { id: "photo", label: "Snap slides or whiteboard", hint: "Take photos, up to 8", icon: "📸" },
   { id: "pdf", label: "Upload PDF or slides", hint: "Save slides as PDF first", icon: "📄" },
   { id: "text", label: "Paste a reading", hint: "Copy text from any reading", icon: "📋" },
   { id: "assignment", label: "Paste assignment", hint: "We explain it, not do it", icon: "📝" },
@@ -26,6 +27,7 @@ export default function NewPage() {
   const [courses, setCourses] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,9 +53,9 @@ export default function NewPage() {
   const courseName = course.trim() || "My course";
 
   /** turns the gathered text into notes, saves the lesson and opens it. */
-  async function makeNotes(source: string, type: Item["type"], pdfBase64?: string) {
+  async function makeNotes(source: string, type: Item["type"], pdfBase64?: string, images?: string[]) {
     setStatus("Writing your notes...");
-    const { notes } = await post<{ notes: Notes }>("/api/notes", { text: source, pdfBase64 });
+    const { notes } = await post<{ notes: Notes }>("/api/notes", { text: source, pdfBase64, images });
     const item: Item = { id: newId(), type, course: courseName, title: notes.title, createdAt: Date.now(), source: source || "", notes };
     saveItem(item);
     markSeen(notes.terms, courseName);
@@ -82,6 +84,11 @@ export default function NewPage() {
         saveItem(item);
         markSeen(assignment.terms, courseName);
         router.push(`/item/${item.id}`);
+      } else if (mode === "photo") {
+        if (!photos.length) throw new Error("Take or choose at least one photo");
+        setStatus(`Reading ${photos.length === 1 ? "the photo" : `${photos.length} photos`}...`);
+        const images = await Promise.all(photos.slice(0, 8).map((f) => photoToBase64(f)));
+        await makeNotes("", "lecture", undefined, images);
       } else if (mode === "pdf") {
         if (!file) throw new Error("Choose a PDF first");
         if (file.size > 3_000_000) throw new Error("This PDF is over 3MB. Try a smaller one, or paste the text instead.");
@@ -191,6 +198,45 @@ export default function NewPage() {
               <p className="mt-1 text-sm text-slate-500">
                 {recording ? "Keep this page open. Tap again when the lecture ends." : "Put your phone near the speaker."}
               </p>
+            </div>
+          )}
+
+          {mode === "photo" && (
+            <div>
+              {/* a label styled as a big button opens the camera or the photo library on phones */}
+              <label className="flex cursor-pointer flex-col items-center rounded-3xl border-2 border-dashed border-navy-200 bg-navy-50 px-6 py-8 text-center hover:bg-navy-100">
+                <span className="text-4xl">📸</span>
+                <span className="mt-2 font-semibold text-navy-900">{photos.length ? "Add more photos" : "Take or choose photos"}</span>
+                <span className="mt-1 text-sm text-slate-500">Slides on the projector, the whiteboard, or a printed handout</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files ?? []);
+                    setPhotos((p) => [...p, ...picked].slice(0, 8));
+                    e.target.value = ""; // lets the same photo be picked again after removing it
+                  }}
+                />
+              </label>
+              {photos.length > 0 && (
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  {photos.map((f, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}
+                      className="relative aspect-square overflow-hidden rounded-xl bg-slate-100"
+                      aria-label="Remove photo"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                      <span className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs text-white">✕</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

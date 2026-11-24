@@ -60,7 +60,8 @@ async function fetchWithTimeout(service: string, url: string, init: RequestInit,
 
 export type Block =
   | { type: "text"; text: string }
-  | { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } };
+  | { type: "document"; source: { type: "base64"; media_type: "application/pdf"; data: string } }
+  | { type: "image"; source: { type: "base64"; media_type: "image/jpeg"; data: string } };
 
 /**
  * one call to the ai. returns the text of the reply.

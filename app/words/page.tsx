@@ -2,6 +2,7 @@
 // word bank: every word the student tapped, with a quick review game.
 
 import { useEffect, useMemo, useState } from "react";
+import { Speak } from "@/components/Speak";
 import { dueWords, getWords, isLearned, LEARNED_STREAK, markArabicUsed, removeFromBank, reviewWord, setKnown, useStore } from "@/lib/store";
 import type { WordEntry } from "@/lib/types";
 
@@ -131,7 +132,10 @@ function Review({ words, practice, onDone }: { words: WordEntry[]; practice: boo
         <p className="text-sm text-slate-400">
           {i + 1} of {words.length}
         </p>
-        <p className="mt-2 text-3xl font-bold">{w.term}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <p className="text-3xl font-bold">{w.term}</p>
+          <Speak text={w.term} />
+        </div>
         {shown ? (
           <>
             <p className="mt-4 text-lg">{w.meaning}</p>

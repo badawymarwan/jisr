@@ -12,9 +12,9 @@ const TYPE_ICON: Record<ItemType, string> = { lecture: "🎙️", reading: "📄
 
 const ACTIONS = [
   { href: "/new?mode=record", icon: "🎙️", label: "Record lecture" },
-  { href: "/new?mode=pdf", icon: "📄", label: "Upload slides" },
+  { href: "/new?mode=photo", icon: "📸", label: "Snap slides" },
+  { href: "/new?mode=pdf", icon: "📄", label: "Upload PDF" },
   { href: "/new?mode=assignment", icon: "📝", label: "Explain assignment" },
-  { href: "/live", icon: "⚡", label: "Live class" },
 ];
 
 function greeting() {
