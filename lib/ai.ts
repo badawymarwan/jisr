@@ -16,7 +16,7 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 // models tried in order: if one is busy (503), rate limited (429) or too slow, the next one is used.
 // set GEMINI_MODEL to override, e.g. GEMINI_MODEL=gemini-3.5-flash-lite,gemini-flash-lite-latest
-const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite,gemini-2.5-flash-lite")
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite")
   .split(",")
   .map((m) => m.trim())
   .filter(Boolean);
@@ -77,7 +77,7 @@ export async function generate(
 
 /** tries each gemini model in turn until one answers. */
 async function callGemini(system: string, content: string | Block[], maxTokens: number, json: boolean): Promise<string> {
-  let lastError: unknown;
+  const failures: { model: string; error: RetryableError }[] = []; // every model's reason, not just the last one
   const deadline = Date.now() + TOTAL_BUDGET_MS;
   const big = maxTokens >= 3000 || typeof content !== "string"; // notes, practice, assignments, any pdf
   for (const model of GEMINI_MODELS) {
@@ -86,16 +86,23 @@ async function callGemini(system: string, content: string | Block[], maxTokens: 
     try {
       return await callGeminiModel(model, system, content, maxTokens, json, Math.min(big ? BIG_TIMEOUT_MS : TIMEOUT_MS, left));
     } catch (e) {
-      lastError = e;
-      const retryable = e instanceof RetryableError;
-      if (!retryable) throw e; // wrong key, blocked request etc: no point trying another model
+      if (!(e instanceof RetryableError)) throw e; // wrong key, blocked request etc: no point trying another model
+      failures.push({ model, error: e });
     }
   }
-  throw lastError instanceof Error ? new Error(lastError.message.replace(/^Gemini/, "Gemini (all models busy)")) : lastError;
+  // all models failed. log every reason (shows in vercel logs / the terminal), and show the student the most useful one:
+  // a 404 only means that model is retired, so a busy, limit or timeout reason from another model explains more.
+  console.error("Gemini: every model failed\n" + failures.map((f) => `  ${f.model}: ${f.error.message}`).join("\n"));
+  const best = failures.find((f) => f.error.status !== 404) ?? failures[0];
+  throw new Error(best ? best.error.message : "Gemini didn't answer in time. Try again.");
 }
 
 /** an error where trying a different model might help (busy, rate limited, timed out). */
-class RetryableError extends Error {}
+class RetryableError extends Error {
+  constructor(message: string, public status = 0) {
+    super(message);
+  }
+}
 
 async function callGeminiModel(
   model: string,
@@ -130,7 +137,7 @@ async function callGeminiModel(
   }
   if (!res.ok) {
     const msg = friendly("Gemini", res.status, await res.text());
-    if ([404, 429, 500, 503, 504].includes(res.status)) throw new RetryableError(msg);
+    if ([404, 429, 500, 503, 504].includes(res.status)) throw new RetryableError(msg, res.status);
     throw new Error(msg);
   }
   const data = (await res.json()) as {
