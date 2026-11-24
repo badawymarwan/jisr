@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { Chart, perWeek, WEEKS } from "@/components/ProgressCharts";
-import { addSampleHistory, dueWords, getItems, getLog, removeSampleHistory, useStore } from "@/lib/store";
+import { dueWords, getItems, getLog, loadSampleData, removeSampleData, useStore } from "@/lib/store";
 import type { Item, ItemType } from "@/lib/types";
 
 const TYPE_LABEL: Record<ItemType, string> = { lecture: "Lecture", reading: "Reading", assignment: "Assignment" };
@@ -31,7 +31,7 @@ export default function Home() {
   const taps = useMemo(() => perWeek(log, "arabic"), [log]);
   const learnedWeeks = useMemo(() => perWeek(log, "learned"), [log]);
   const totalLearned = log.filter((e) => e.kind === "learned").length;
-  const hasSample = log.some((e) => e.sample);
+  const hasSample = items.some((i) => i.id.startsWith("sample-")) || log.some((e) => e.sample);
 
   // arabic fade: how much less arabic this week compared with the first active week
   const firstWeek = taps.find((w) => w.value > 0)?.value ?? 0;
@@ -106,9 +106,14 @@ export default function Home() {
         <div className="card mt-8 text-center">
           <p className="text-lg font-semibold">No lessons yet</p>
           <p className="mt-1 text-slate-600">Record a lecture, upload slides, or paste an assignment to start.</p>
-          <Link href="/new" className="btn mt-4">
-            Add your first lesson
-          </Link>
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <Link href="/new" className="btn">
+              Add your first lesson
+            </Link>
+            <button className="btn-ghost" onClick={loadSampleData}>
+              Try with sample data
+            </button>
+          </div>
         </div>
       ) : (
         Object.entries(byCourse).map(([course, list]) => (
@@ -131,8 +136,8 @@ export default function Home() {
         ))
       )}
 
-      <button className="mt-10 text-sm text-slate-400 underline" onClick={hasSample ? removeSampleHistory : addSampleHistory}>
-        {hasSample ? "Remove sample history" : "Show sample history (for demos)"}
+      <button className="mt-10 text-sm text-slate-400 underline" onClick={hasSample ? removeSampleData : loadSampleData}>
+        {hasSample ? "Remove sample data" : "Load sample data (for demos)"}
       </button>
     </div>
   );

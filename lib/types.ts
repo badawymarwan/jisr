@@ -60,4 +60,5 @@ export type WordEntry = {
   streak?: number; // correct recalls in a row in review (3 = learned)
   due?: number; // when it should come back in review (spaced repetition)
   arabicUses?: number; // times they pressed "show arabic" for it
+  sample?: boolean; // part of the demo sample data
 };

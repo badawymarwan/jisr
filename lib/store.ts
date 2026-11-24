@@ -4,6 +4,7 @@
 // try/catch because storage can be blocked (private mode, full storage).
 
 import { useEffect, useState } from "react";
+import { sampleItems, sampleWords } from "./sample";
 import type { Item, Term, WordEntry } from "./types";
 
 const ITEMS_KEY = "lb.items.v1";
@@ -194,11 +195,26 @@ function logEvent(kind: LogEvent["kind"], term: string) {
 
 const WEEK = 7 * 24 * 3600 * 1000;
 
-/** fills the last 6 weeks with believable history: arabic taps going down, learned words going up. */
-export function addSampleHistory() {
+/** fills the app with sample lessons, words and 6 weeks of progress, for demos. */
+export function loadSampleData() {
+  const now = Date.now();
+  write(ITEMS_KEY, [...getItems().filter((i) => !i.id.startsWith("sample-")), ...sampleItems(now)].sort((a, b) => b.createdAt - a.createdAt));
+  write(WORDS_KEY, { ...sampleWords(now), ...getWords() }); // the student's own words win if both exist
+  addSampleHistory();
+}
+
+/** removes exactly the sample data and keeps everything the student made. */
+export function removeSampleData() {
+  write(ITEMS_KEY, getItems().filter((i) => !i.id.startsWith("sample-")));
+  write(WORDS_KEY, Object.fromEntries(Object.entries(getWords()).filter(([, w]) => !w.sample)));
+  removeSampleHistory();
+}
+
+/** fills the last 6 weeks with believable history: arabic needed going down, learned words going up. */
+function addSampleHistory() {
   const now = Date.now();
   const arabic = [26, 21, 17, 12, 9, 5]; // oldest week first
-  const learned = [2, 4, 6, 7, 9, 10];
+  const learned = [1, 1, 2, 2, 3, 3]; // adds up to the 12 learned sample words
   const fake: LogEvent[] = [];
   arabic.forEach((n, i) => {
     const weekStart = now - (6 - i) * WEEK;
@@ -209,7 +225,7 @@ export function addSampleHistory() {
   write(LOG_KEY, [...getLog().filter((e) => !e.sample), ...fake].sort((a, b) => a.t - b.t));
 }
 
-export function removeSampleHistory() {
+function removeSampleHistory() {
   write(LOG_KEY, getLog().filter((e) => !e.sample));
 }
 

@@ -22,12 +22,12 @@ export const MOCK_NOTES: Notes = {
     { heading: "Elasticity", points: ["Elasticity shows how much buying changes when the price changes."] },
   ],
   terms: [
-    { term: "demand", meaning: "how much people want to buy", arabic: "الطلب: كمية ما يريد الناس شراءه" },
-    { term: "supply", meaning: "how much sellers offer to sell", arabic: "العرض: كمية ما يعرضه البائعون" },
-    { term: "equilibrium", meaning: "the balance point where buying equals selling", arabic: "التوازن: السعر الذي يتساوى عنده العرض والطلب" },
-    { term: "shortage", meaning: "less of a product than people want", arabic: "النقص: الكمية المعروضة أقل من المطلوبة" },
-    { term: "surplus", meaning: "more of a product than people want", arabic: "الفائض: الكمية المعروضة أكثر من المطلوبة" },
-    { term: "elasticity", meaning: "how much buying changes when price changes", arabic: "المرونة: مدى تغيّر الشراء عند تغيّر السعر" },
+    { term: "demand", meaning: "how much people want to buy", arabic: "الطلب — كمية ما يريد الناس شراءه" },
+    { term: "supply", meaning: "how much sellers offer to sell", arabic: "العرض — كمية ما يعرضه البائعون" },
+    { term: "equilibrium", meaning: "the balance point where buying equals selling", arabic: "التوازن — السعر الذي يتساوى عنده العرض والطلب" },
+    { term: "shortage", meaning: "less of a product than people want", arabic: "النقص — الكمية المعروضة أقل من المطلوبة" },
+    { term: "surplus", meaning: "more of a product than people want", arabic: "الفائض — الكمية المعروضة أكثر من المطلوبة" },
+    { term: "elasticity", meaning: "how much buying changes when price changes", arabic: "المرونة — مدى تغيّر الشراء عند تغيّر السعر" },
   ],
 };
 
@@ -75,8 +75,8 @@ export const MOCK_ASSIGNMENT: AssignmentHelp = {
   format: ["Maximum 1,500 words", "APA referencing", "Due Sunday 11:59 pm on Moodle"],
   terms: [
     { term: "heat transfer", meaning: "how heat moves from one thing to another", arabic: "انتقال الحرارة" },
-    { term: "method", meaning: "the steps you followed in the experiment", arabic: "طريقة العمل: الخطوات التي اتبعتها" },
-    { term: "appendix", meaning: "extra material added at the end", arabic: "ملحق: مواد إضافية في نهاية التقرير" },
+    { term: "method", meaning: "the steps you followed in the experiment", arabic: "طريقة العمل — الخطوات التي اتبعتها" },
+    { term: "appendix", meaning: "extra material added at the end", arabic: "ملحق — مواد إضافية في نهاية التقرير" },
     { term: "APA referencing", meaning: "a set style for listing your sources", arabic: "أسلوب APA لكتابة المراجع" },
   ],
 };
