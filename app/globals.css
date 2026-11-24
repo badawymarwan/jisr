@@ -2,28 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* look: playful and chunky (duolingo-style). white background, grey 2px borders,
+   thick bottom edges on things you can press, navy + yellow only. */
+
 :root {
-  --font-inter: "Inter";
   --font-arabic: "IBM Plex Sans Arabic";
 }
 
 body {
-  background: #f5f7fa;
-  color: #0d1b33;
+  background: #ffffff;
+  color: #3c3c3c;
   -webkit-tap-highlight-color: transparent;
 }
 
+h1, h2, h3 {
+  @apply font-extrabold text-navy-600;
+}
+
 .card {
-  @apply rounded-3xl bg-white p-5 shadow-[0_1px_3px_rgba(13,27,51,0.06),0_8px_24px_rgba(13,27,51,0.04)];
+  @apply rounded-[20px] border-2 border-line bg-white p-5;
 }
+
+/* main button: yellow with a darker bottom edge; pressing pushes it down */
 .btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-full bg-navy-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-sun-400 px-6 py-3 text-[15px] font-black uppercase tracking-wide text-white shadow-[0_4px_0_#d99a00] transition-all hover:brightness-105 active:translate-y-1 active:shadow-none disabled:opacity-50;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
 }
+/* second button: white with a grey bottom edge */
 .btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-navy-800 transition hover:bg-slate-50 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-b-4 border-line bg-white px-5 py-2.5 text-[15px] font-extrabold uppercase tracking-wide text-navy-600 transition-all hover:bg-slate-50 active:translate-y-0.5 active:border-b-2 disabled:opacity-50;
+}
+/* a card you can tap: same thick bottom edge */
+.tile {
+  @apply rounded-[18px] border-2 border-b-4 border-line bg-white transition-all hover:bg-slate-50 active:translate-y-0.5 active:border-b-2;
 }
 .input {
-  @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[15px] outline-none focus:border-navy-600;
+  @apply w-full rounded-2xl border-2 border-line bg-[#f7f7f7] px-4 py-3 text-[16px] font-semibold outline-none focus:border-navy-600 focus:bg-white;
+}
+.label {
+  @apply text-[13px] font-extrabold uppercase tracking-wide text-[#afafaf];
 }
 
 @keyframes fadein {

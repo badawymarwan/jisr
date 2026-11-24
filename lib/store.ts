@@ -195,6 +195,20 @@ function logEvent(kind: LogEvent["kind"], term: string) {
 
 const WEEK = 7 * 24 * 3600 * 1000;
 
+/** streak: how many days in a row (ending today or yesterday) the student did anything in the app. */
+export function streakDays(log: LogEvent[]): number {
+  const dayKey = (t: number) => new Date(t).toDateString();
+  const days = new Set(log.map((e) => dayKey(e.t)));
+  let n = 0;
+  const d = new Date();
+  if (!days.has(dayKey(d.getTime()))) d.setDate(d.getDate() - 1); // today not started yet: count up to yesterday
+  while (days.has(dayKey(d.getTime()))) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
 /** fills the app with sample lessons, words and 6 weeks of progress, for demos. */
 export function loadSampleData() {
   const now = Date.now();

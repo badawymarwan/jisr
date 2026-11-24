@@ -3,6 +3,7 @@
 // of audio goes to speech-to-text, then the ai adds 1-3 new bullet points.
 
 import { useEffect, useRef, useState } from "react";
+import { Icon, ICONS } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import TermText from "@/components/TermText";
 import { post, SegmentRecorder, transcribeBlob } from "@/lib/client";
@@ -165,7 +166,7 @@ export default function LivePage() {
             className={`flex h-16 w-16 items-center justify-center rounded-full text-white shadow-lg ${listening ? "animate-pulse bg-red-600" : "bg-navy-700"}`}
             aria-label={listening ? "Stop" : "Start listening"}
           >
-            {listening ? <span className="h-6 w-6 rounded bg-white" /> : <span className="text-2xl">🎙️</span>}
+            {listening ? <span className="h-6 w-6 rounded bg-white" /> : <Icon d={ICONS.mic} color="#ffffff" size={26} />}
           </button>
           <div>
             <p className="font-semibold">{listening ? "Listening..." : "Start listening"}</p>

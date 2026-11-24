@@ -2,6 +2,7 @@
 // new: record or upload a lecture, upload a pdf, paste a reading, or paste an assignment.
 
 import { useEffect, useRef, useState } from "react";
+import { Icon, ICONS } from "@/components/Icon";
 import { useRouter } from "next/navigation";
 import { fileToBase64, photoToBase64, post, SegmentRecorder, transcribeBlob } from "@/lib/client";
 import { getCourses, markSeen, newId, saveItem } from "@/lib/store";
@@ -9,13 +10,14 @@ import type { AssignmentHelp, Item, Notes } from "@/lib/types";
 
 type Mode = "record" | "photo" | "audio" | "pdf" | "text" | "assignment";
 
-const MODES: { id: Mode; label: string; hint: string; icon: string }[] = [
-  { id: "record", label: "Record lecture", hint: "Use your phone's mic in class", icon: "🎙️" },
-  { id: "audio", label: "Upload audio", hint: "A recording up to 4MB", icon: "🎧" },
-  { id: "photo", label: "Snap slides or whiteboard", hint: "Take photos, up to 8", icon: "📸" },
-  { id: "pdf", label: "Upload PDF or slides", hint: "Save slides as PDF first", icon: "📄" },
-  { id: "text", label: "Paste a reading", hint: "Copy text from any reading", icon: "📋" },
-  { id: "assignment", label: "Paste assignment", hint: "We explain it, not do it", icon: "📝" },
+// icon colours alternate between the two brand colours: navy and yellow
+const MODES: { id: Mode; label: string; hint: string; icon: string; color: string }[] = [
+  { id: "record", label: "Record lecture", hint: "Use your phone's mic in class", icon: ICONS.mic, color: "#1e3a6b" },
+  { id: "photo", label: "Snap slides", hint: "Photos of slides or the whiteboard", icon: ICONS.camera, color: "#ffb800" },
+  { id: "pdf", label: "Upload PDF", hint: "Save slides as PDF first", icon: ICONS.pdf, color: "#ffb800" },
+  { id: "audio", label: "Upload audio", hint: "A recording up to 4MB", icon: ICONS.headphones, color: "#1e3a6b" },
+  { id: "text", label: "Paste a reading", hint: "Copy text from any reading", icon: ICONS.paste, color: "#1e3a6b" },
+  { id: "assignment", label: "Paste assignment", hint: "We explain it, not do it", icon: ICONS.task, color: "#ffb800" },
 ];
 
 const SEGMENT_MS = 60_000; // send audio for speech-to-text every 60 seconds
@@ -171,11 +173,11 @@ export default function NewPage() {
               setFile(null);
               setError(null);
             }}
-            className={`card text-left transition ${mode === m.id ? "ring-2 ring-navy-600" : "hover:-translate-y-0.5"}`}
+            className={`tile p-4 text-left ${mode === m.id ? "!border-navy-600 bg-navy-50" : ""}`}
           >
-            <span className="text-2xl">{m.icon}</span>
-            <span className="mt-2 block font-semibold">{m.label}</span>
-            <span className="text-xs text-slate-500">{m.hint}</span>
+            <Icon d={m.icon} color={m.color} size={32} />
+            <span className="mt-2 block text-[15px] font-extrabold text-[#3c3c3c]">{m.label}</span>
+            <span className="text-xs font-semibold text-[#afafaf]">{m.hint}</span>
           </button>
         ))}
       </div>
@@ -192,7 +194,7 @@ export default function NewPage() {
                 }`}
                 aria-label={recording ? "Stop recording" : "Start recording"}
               >
-                {recording ? <span className="h-8 w-8 rounded-md bg-white" /> : <span className="text-4xl">🎙️</span>}
+                {recording ? <span className="h-8 w-8 rounded-md bg-white" /> : <Icon d={ICONS.mic} color="#ffffff" size={40} />}
               </button>
               <p className="mt-4 font-semibold">{recording ? `Recording ${mmss}` : "Tap to start recording"}</p>
               <p className="mt-1 text-sm text-slate-500">
@@ -205,7 +207,7 @@ export default function NewPage() {
             <div>
               {/* a label styled as a big button opens the camera or the photo library on phones */}
               <label className="flex cursor-pointer flex-col items-center rounded-3xl border-2 border-dashed border-navy-200 bg-navy-50 px-6 py-8 text-center hover:bg-navy-100">
-                <span className="text-4xl">📸</span>
+                <Icon d={ICONS.camera} color="#ffb800" size={40} />
                 <span className="mt-2 font-semibold text-navy-900">{photos.length ? "Add more photos" : "Take or choose photos"}</span>
                 <span className="mt-1 text-sm text-slate-500">Slides on the projector, the whiteboard, or a printed handout</span>
                 <input
